@@ -1,5 +1,8 @@
 # FoundryOS AI
 
+<img width="548" height="165" alt="foun" src="https://github.com/user-attachments/assets/a3f693a6-d2b4-4343-8772-b130c85baa65" />
+
+
 **Manufacturing intelligence and controlled workflow automation for the shop floor.**
 
 FoundryOS AI turns the data operators already record — downtime, output, rejects,
