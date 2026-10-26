@@ -1,0 +1,17 @@
+#!/bin/bash
+# First-boot preparation (cloud-init runs this as root once).
+# Log: /var/log/cloud-init-output.log   Wait for it: cloud-init status --wait
+set -euo pipefail
+export USER=ubuntu
+
+cat > /root/setup-ec2.sh <<'SETUP_SCRIPT'
+${setup_script}
+SETUP_SCRIPT
+bash /root/setup-ec2.sh
+
+%{ if repo_url != "" ~}
+if [ ! -d /home/ubuntu/foundryos-ai ]; then
+  sudo -u ubuntu -H git clone "${repo_url}" /home/ubuntu/foundryos-ai
+fi
+%{ endif ~}
+echo "FoundryOS AI server prepared."

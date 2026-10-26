@@ -1,5 +1,4 @@
 # FoundryOS AI
-<img width="377" height="65" alt="banner" src="https://github.com/user-attachments/assets/ec03618d-7bee-4c32-a189-c91190a131b4" />
 
 **Manufacturing intelligence and controlled workflow automation for the shop floor.**
 
@@ -7,6 +6,11 @@ FoundryOS AI turns the data operators already record — downtime, output, rejec
 inspections and maintenance — into live plant KPIs, AI-written shift reports and
 maintenance requests. AI prepares the work; people approve it; every action is
 recorded.
+
+> **Project status:** Modules 0–5 are complete and verified on a local installation
+> (backend: Ruff clean, 487 automated tests; frontend: Vitest suite and production
+> build). The system currently runs against a clearly labelled **synthetic** demo
+> dataset and has **not yet been deployed or used in a production plant**.
 
 ---
 
@@ -171,7 +175,8 @@ Details: [`docs/architecture.md`](docs/architecture.md).
 
 ```powershell
 # 1. Configure
-copy .env.example .env          # set DATABASE_URL and VITE_API_BASE_URL (Gemini key only if AI is wanted)
+# Create a local .env file and set DATABASE_URL and VITE_API_BASE_URL.
+# See "Configure the environment" below; add a Gemini key only if AI is wanted.
 
 # 2. Backend
 cd backend
@@ -208,11 +213,9 @@ managers under **Users & access** and assign machines to operators.
 
 #### 1. Configure the environment
 
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and replace every `CHANGE_ME`. At minimum:
+Create a local `.env` file and add the settings below. Environment files are
+intentionally not included in this repository. Set the values for your setup;
+at minimum:
 
 | Variable | Purpose |
 |---|---|
@@ -392,7 +395,7 @@ npm run build               # verifies the production bundle builds
 |---|---|
 | `permission denied for schema public` during `alembic upgrade head` | PostgreSQL 15+ does not grant `CREATE` on schema `public` by default. See [local-database-setup.md, Step 5](docs/local-database-setup.md#step-5--if-public-create-is-false-postgresql-15-behaviour). |
 | `fe_sendauth: no password supplied` | URL has no password and no libpq password file entry matches. See [local-database-setup.md, Step 2](docs/local-database-setup.md#step-2--supply-the-password-choose-one-option). |
-| API fails at startup with `database_url Field required` | `DATABASE_URL` not set. Create `.env` from `.env.example` (the backend reads `.env` in `backend/` or the repo root). |
+| API fails at startup with `database_url Field required` | `DATABASE_URL` not set. Create a local `.env` and set `DATABASE_URL` (the backend reads `.env` in `backend/` or the repo root). |
 | `DATABASE_URL must be a PostgreSQL URL` | Use `postgresql+psycopg://…` (or `postgresql://…`). |
 | `/health/ready` → 503, database `fail` | PostgreSQL not running or wrong credentials. `docker compose ps`; check `DATABASE_URL` host/port/password. Inside Compose the host is `db`; on the host it is `localhost`. |
 | `/health/ready` → 503, migrations `fail` | Run `alembic upgrade head` from `backend/`. |
@@ -436,7 +439,6 @@ foundryos-ai/
 ├── docs/                      # architecture and per-module documentation
 ├── verify_all.ps1             # one-command verification (Windows)
 ├── docker-compose.yml
-└── .env.example               # configuration template (never commit .env)
 ```
 
 ## 15. Documentation
@@ -450,6 +452,9 @@ foundryos-ai/
 | AI shift reports and data sent to the AI | [`docs/module-3-shift-reports.md`](docs/module-3-shift-reports.md) |
 | Workflow assistant and human approval | [`docs/module-4-workflow-agent.md`](docs/module-4-workflow-agent.md) |
 | Accounts, roles, sessions, first admin | [`docs/module-5-auth-rbac.md`](docs/module-5-auth-rbac.md) |
+| Deploying on AWS (one EC2 server, HTTPS, demo accounts) | [`docs/deployment-aws.md`](docs/deployment-aws.md) |
+| Creating the AWS server with Terraform | [`docs/deployment-terraform.md`](docs/deployment-terraform.md) |
+| Web client on Cloudflare Pages, API on AWS | [`docs/deployment-cloudflare-pages.md`](docs/deployment-cloudflare-pages.md) |
 | Roadmap and verification log | [`docs/module-checklist.md`](docs/module-checklist.md) |
 
 ## 16. Limitations and roadmap

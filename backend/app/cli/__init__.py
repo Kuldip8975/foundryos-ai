@@ -1,0 +1,1 @@
+"""Operator command-line tools (run with ``python -m app.cli.<name>`` from backend/)."""

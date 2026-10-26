@@ -1,0 +1,24 @@
+[project]
+name = "foundryos-backend"
+version = "0.1.0"
+description = "FoundryOS AI — manufacturing intelligence platform (backend API)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: requires a reachable PostgreSQL database (set TEST_DATABASE_URL)",
+]
+filterwarnings = ["error::DeprecationWarning:app.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["S101"]  # assert is idiomatic in pytest
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*" = ["E501"]

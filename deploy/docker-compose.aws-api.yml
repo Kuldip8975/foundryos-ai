@@ -1,0 +1,88 @@
+# FoundryOS AI - API + database on one AWS EC2 server; web client on Cloudflare Pages.
+#
+#   Visitor -> https://<project>.pages.dev                  (Cloudflare Pages)
+#   Visitor -> https://<id>.execute-api.<region>.amazonaws.com  (AWS API Gateway, HTTPS)
+#                -> this server :80 (Caddy, accepts API Gateway only) -> FastAPI -> PostgreSQL
+#
+#   cd deploy
+#   cp .env.production.example .env      # fill in; set COMPOSE_FILE=docker-compose.aws-api.yml
+#   docker compose up -d --build
+#
+# Server setup with Terraform: docs/deployment-cloudflare-pages.md
+
+name: foundryos
+
+x-backend-env: &backend-env
+  ENVIRONMENT: production
+  LOG_LEVEL: INFO
+  LOG_FORMAT: json
+  ENABLE_API_DOCS: "false"
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?set POSTGRES_DB}
+  # Only the Cloudflare Pages address may call the API from a browser.
+  CORS_ALLOWED_ORIGINS: ${FRONTEND_ORIGIN:?set FRONTEND_ORIGIN, e.g. https://foundryos.pages.dev}
+  DEMO_MODE: ${DEMO_MODE:-false}
+  DEMO_ACCOUNT_PASSWORD: ${PUBLIC_DEMO_PASSWORD:-}
+  AI_REPORTS_ENABLED: ${AI_REPORTS_ENABLED:-false}
+  AI_WORKFLOW_ENABLED: ${AI_WORKFLOW_ENABLED:-false}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+  GEMINI_THINKING_LEVEL: ${GEMINI_THINKING_LEVEL:-low}
+  # API Gateway ends any request after 30 seconds; AI calls must finish sooner.
+  AI_REQUEST_TIMEOUT_SECONDS: "25"
+  WORKFLOW_TIMEOUT_SECONDS: "28"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # One-shot job: applies Alembic migrations on every deploy, then exits.
+  migrate:
+    build: ../backend
+    command: ["alembic", "upgrade", "head"]
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    environment: *backend-env
+    # The visitor address arrives as X-Forwarded-For from Caddy (set from
+    # API Gateway's X-Client-IP); the API port itself is not published.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000",
+              "--proxy-headers", "--forwarded-allow-ips", "*"]
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      ORIGIN_SECRET: ${ORIGIN_SECRET:?set ORIGIN_SECRET (terraform output -raw origin_secret)}
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile.api:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

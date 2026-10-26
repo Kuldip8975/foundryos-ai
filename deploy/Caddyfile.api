@@ -1,0 +1,23 @@
+# FoundryOS AI - API-only entry point behind AWS API Gateway.
+# The web client is hosted on Cloudflare Pages; API Gateway provides HTTPS and
+# forwards to this server over port 80, adding two headers:
+#   X-Origin-Secret  shared secret, so only API Gateway can reach the API
+#   X-Client-IP      the visitor's real address (used by sign-in rate limits)
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	@fromGateway header X-Origin-Secret {$ORIGIN_SECRET}
+	handle @fromGateway {
+		handle /api/* {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {http.request.header.X-Client-IP}
+				header_up -X-Origin-Secret
+			}
+		}
+		respond 404
+	}
+	respond 403
+}

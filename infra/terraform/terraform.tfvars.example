@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (git-ignored) and fill in.
+# Your public IP: open https://checkip.amazonaws.com and add /32
+allowed_ssh_cidr = "203.0.113.7/32"
+
+# aws_region          = "ap-south-1"
+# instance_type       = "t3.micro"
+# root_volume_gb      = 20
+# ssh_public_key_path = "~/.ssh/foundryos-key.pub"
+# repo_url            = "https://github.com/Kuldip8975/foundryos-ai.git"
